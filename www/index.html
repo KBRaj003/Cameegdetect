@@ -1,31 +1,112 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CameegDetect</title>
+    <title>CameegDetect Live Log</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
-        iframe { width: 100%; height: 100%; border: none; }
-        #debug-overlay { position: fixed; top: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); color: #0f0; font-family: monospace; font-size: 10px; z-index: 9999; pointer-events: none; max-height: 20%; overflow-y: auto; display: none; }
+        body { margin: 0; padding: 0; background: #000; color: #fff; font-family: monospace; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
+        #video-container { position: relative; width: 100vw; height: 50vh; display: flex; justify-content: center; align-items: center; background: #111; flex-shrink: 0; }
+        canvas { display: block; max-width: 100%; max-height: 100%; }
+        #log-panel { flex-grow: 1; width: 100%; background: #000; overflow-y: scroll; font-size: 11px; padding: 10px; border-top: 2px solid #0f0; color: #0f0; box-sizing: border-box; }
+        .err { color: #f00; font-weight: bold; }
+        .warn { color: #ff0; }
     </style>
 </head>
 <body>
-    <div id="debug-overlay"></div>
-    <!-- Force camera permissions in the iframe -->
-    <iframe id="app-frame" src="demos/oculometry/index.html" allow="camera; microphone; autoplay; encrypted-media;"></iframe>
-    
+    <div id="video-container">
+        <canvas id="jeeFaceFilterCanvas"></canvas>
+    </div>
+    <div id="log-panel">--- INITIALIZING SYSTEM ---<br></div>
+
     <script>
-        // Catch iframe errors and display them
-        window.addEventListener('message', function(e) {
-            var overlay = document.getElementById('debug-overlay');
-            overlay.style.display = 'block';
-            overlay.innerHTML += "<div>> " + e.data + "</div>";
-        });
-        window.onerror = function(msg, url, line) {
-            var overlay = document.getElementById('debug-overlay');
-            overlay.style.display = 'block';
-            overlay.innerHTML += "<div style='color:red;'>CRITICAL: " + msg + " at line " + line + "</div>";
-        };
+        const logPanel = document.getElementById('log-panel');
+        function log(msg, type) {
+            const d = document.createElement('div');
+            if (type === 'err') d.className = 'err';
+            if (type === 'warn') d.className = 'warn';
+            const time = new Date().toLocaleTimeString();
+            d.innerText = "[" + time + "] > " + msg;
+            logPanel.appendChild(d);
+            logPanel.scrollTop = logPanel.scrollHeight;
+        }
+        
+        const oldLog = console.log;
+        const oldErr = console.error;
+        console.log = function(...args) { log(args.join(' ')); oldLog.apply(console, args); };
+        console.error = function(...args) { log(args.join(' '), 'err'); oldErr.apply(console, args); };
+        window.onerror = function(msg, url, line) { log("CRASH: " + msg + " at " + line, 'err'); };
+
+        log("Logger initialized.");
+
+        // Force Camera & Catch Errors
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            log("FATAL: WebRTC is not supported in this WebView!", 'err');
+        } else {
+            const originalGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+            navigator.mediaDevices.getUserMedia = async function(constraints) {
+                log("Requesting camera access...");
+                if (constraints && constraints.video) {
+                    if (typeof constraints.video === 'boolean') {
+                        constraints.video = { facingMode: 'user' };
+                    } else {
+                        constraints.video.facingMode = 'user';
+                    }
+                }
+                try {
+                    const stream = await originalGetUserMedia(constraints);
+                    log("Camera access GRANTED.");
+                    return stream;
+                } catch (e) {
+                    log("Camera access DENIED: " + e.name + " - " + e.message, 'err');
+                    throw e;
+                }
+            };
+        }
+
+        // Check WebGL
+        const canvas = document.getElementById('jeeFaceFilterCanvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) {
+            log("FATAL: WebGL is NOT supported or hardware acceleration is disabled!", 'err');
+        } else {
+            log("WebGL supported.");
+        }
+    </script>
+
+    <!-- Load Jeeliz Scripts -->
+    <script src="dist/jeelizPupillometry.js"></script>
+    <script src="helpers/JeelizResize.js"></script>
+    <script src="helpers/JeelizCanvas2DHelper.js"></script>
+
+    <script>
+        log("Scripts loaded. Connecting to neural network...");
+        
+        if (typeof JEELIZPUPILLOMETRY === 'undefined') {
+            log("FATAL: JEELIZPUPILLOMETRY is undefined. Script failed to load. Check paths.", 'err');
+        } else {
+            JEELIZPUPILLOMETRY.init({
+                canvas: canvas,
+                videoSettings: { facingMode: 'user' },
+                callbackReady: function(errCode) {
+                    if (errCode) {
+                        log("INIT ERROR: " + errCode, 'err');
+                        return;
+                    }
+                    log("Neural network initialized successfully!");
+                    log("Starting video feed...");
+                    JEELIZPUPILLOMETRY.play();
+                },
+                callbackTrack: function(detectState) {
+                    if (detectState.detected > 0.5) {
+                        JEELIZPUPILLOMETRY.render(detectState);
+                        if (Math.random() < 0.05) {
+                            log("Pupil Tracked | Confidence: " + detectState.detected.toFixed(2));
+                        }
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>
