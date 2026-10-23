@@ -1,7 +1,6 @@
 {
     "name": "cameegdetect-app",
     "version": "1.0.0",
-    "description": "Cameegdetect APK",
     "dependencies": {
         "@capacitor/android": "^5.0.0",
         "@capacitor/cli": "^5.0.0",

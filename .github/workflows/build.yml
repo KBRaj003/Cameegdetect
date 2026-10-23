@@ -27,17 +27,24 @@ jobs:
       - name: Sync Web Assets
         run: npx cap sync android
 
+      - name: Patch AndroidManifest for Camera
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i '/<manifest/i \    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="true" />' $MANIFEST
+          cat $MANIFEST
+
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Build APK
+      - name: Build APK (Verbose)
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
