@@ -5,7 +5,6 @@ with open(manifest_path, 'r') as f:
 
 permissions = '''<uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
-    <uses-feature android:glEsVersion="0x00020000" android:required="true" />
     <application android:hardwareAccelerated="true" android:usesCleartextTraffic="true" '''
 
 if 'android.permission.CAMERA' not in content:
