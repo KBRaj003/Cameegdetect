@@ -1,3 +1,4 @@
-node_modules/
-android/
-temp_source/
+__pycache__/
+*.pyc
+.buildozer/
+bin/

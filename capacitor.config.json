@@ -1,9 +1,0 @@
-{
-    "appId": "com.kbraj003.cameegdetect",
-    "appName": "Cameegdetect",
-    "webDir": "www",
-    "bundledWebRuntime": false,
-    "server": {
-        "androidScheme": "https"
-    }
-}
