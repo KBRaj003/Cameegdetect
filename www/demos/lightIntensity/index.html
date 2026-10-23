@@ -20,22 +20,7 @@
     <link rel='stylesheet' type='text/css' href='style.css' />
     <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
 
-  
-        <script>
-            window.onerror = function(msg, url, line) {
-                var div = document.createElement('div');
-                div.style = "position:fixed; top:0; left:0; width:100%; background:red; color:white; z-index:9999; padding:15px; font-family:monospace; font-size:12px; word-wrap:break-word;";
-                div.innerHTML = "<b>APP CRASH LOG:</b><br>" + msg + "<br>Line: " + line + "<br>URL: " + url;
-                document.body.appendChild(div);
-            };
-            window.addEventListener('unhandledrejection', function(e) {
-                var div = document.createElement('div');
-                div.style = "position:fixed; top:0; left:0; width:100%; background:orange; color:black; z-index:9999; padding:15px; font-family:monospace; font-size:12px;";
-                div.innerHTML = "<b>CAMERA/PROMISE ERROR:</b><br>" + e.reason;
-                document.body.appendChild(div);
-            });
-        </script>
-        </head>
+  </head>
   <body onload="Experiment.init();">
 
     <!-- Tab links -->
