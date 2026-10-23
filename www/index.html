@@ -7,16 +7,18 @@
     <style>
         body { margin: 0; padding: 0; background: #000; color: #fff; font-family: monospace; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
         #video-container { position: relative; width: 100vw; height: 50vh; display: flex; justify-content: center; align-items: center; background: #111; flex-shrink: 0; }
-        canvas { display: block; max-width: 100%; max-height: 100%; width: 300px; height: 300px; }
+        canvas { display: block; max-width: 100%; max-height: 100%; width: 100%; height: 100%; object-fit: cover; }
         #log-panel { flex-grow: 1; width: 100%; background: #000; overflow-y: scroll; font-size: 11px; padding: 10px; border-top: 2px solid #0f0; color: #0f0; box-sizing: border-box; }
         .err { color: #f00; font-weight: bold; }
         .warn { color: #ff0; }
     </style>
 </head>
 <body>
+    <!-- Added hidden video element for Jeeliz -->
+    <video id="jeeVideo" autoplay playsinline style="display:none;"></video>
+    
     <div id="video-container">
-        <!-- Added explicit width and height -->
-        <canvas id="jeeFaceFilterCanvas" width="300" height="300"></canvas>
+        <canvas id="jeeFaceFilterCanvas"></canvas>
     </div>
     <div id="log-panel">--- INITIALIZING SYSTEM ---<br></div>
 
@@ -34,8 +36,10 @@
         
         const oldLog = console.log;
         const oldErr = console.error;
+        const oldWarn = console.warn;
         console.log = function(...args) { log(args.join(' ')); oldLog.apply(console, args); };
         console.error = function(...args) { log(args.join(' '), 'err'); oldErr.apply(console, args); };
+        console.warn = function(...args) { log(args.join(' '), 'warn'); oldWarn.apply(console, args); };
         window.onerror = function(msg, url, line) { log("CRASH: " + msg + " at " + line, 'err'); };
 
         log("Logger initialized.");
@@ -71,6 +75,14 @@
         } else {
             log("WebGL supported.");
         }
+
+        // Timeout watchdog to catch silent hangs
+        let initSuccess = false;
+        setTimeout(() => {
+            if (!initSuccess) {
+                log("WATCHDOG TIMEOUT: Neural network failed to load in 10 seconds. The .bin/.json files in the 'dist' folder may be missing or blocked by CORS.", 'err');
+            }
+        }, 10000);
     </script>
 
     <!-- Load Jeeliz Scripts -->
@@ -82,16 +94,19 @@
         log("Scripts loaded. Connecting to neural network...");
         
         if (typeof JEELIZPUPILLOMETRY === 'undefined') {
-            log("FATAL: JEELIZPUPILLOMETRY is undefined. Script failed to load.", 'err');
+            log("FATAL: JEELIZPUPILLOMETRY is undefined.", 'err');
         } else {
             JEELIZPUPILLOMETRY.init({
-                canvasId: 'jeeFaceFilterCanvas', // FIXED: Using canvasId string instead of element
+                canvasId: 'jeeFaceFilterCanvas',
+                videoElement: document.getElementById('jeeVideo'), // Pass the hidden video element
+                NNCPath: 'dist/', // CRITICAL FIX: Tell the worker where the model files are
                 videoSettings: { facingMode: 'user' },
                 callbackReady: function(errCode, spec) {
                     if (errCode) {
                         log("INIT ERROR: " + errCode, 'err');
                         return;
                     }
+                    initSuccess = true;
                     log("Neural network initialized successfully!");
                     log("Starting video feed...");
                     JEELIZPUPILLOMETRY.play();
