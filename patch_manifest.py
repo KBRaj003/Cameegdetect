@@ -1,11 +1,8 @@
 
-import re
-
 manifest_path = 'android/app/src/main/AndroidManifest.xml'
 with open(manifest_path, 'r') as f:
     content = f.read()
 
-# Inject permissions and hardware acceleration
 permissions = '''<uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:glEsVersion="0x00020000" android:required="true" />
