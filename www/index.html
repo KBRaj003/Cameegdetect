@@ -1,9 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="refresh" content="0; url=demos/oculometry/index.html" />
-    <script>window.location.href = "demos/oculometry/index.html";</script>
-    <title>Loading Oculometry...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CameegDetect</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
+        iframe { width: 100%; height: 100%; border: none; }
+        #debug-overlay { position: fixed; top: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); color: #0f0; font-family: monospace; font-size: 10px; z-index: 9999; pointer-events: none; max-height: 20%; overflow-y: auto; display: none; }
+    </style>
 </head>
-<body></body>
+<body>
+    <div id="debug-overlay"></div>
+    <!-- Force camera permissions in the iframe -->
+    <iframe id="app-frame" src="demos/oculometry/index.html" allow="camera; microphone; autoplay; encrypted-media;"></iframe>
+    
+    <script>
+        // Catch iframe errors and display them
+        window.addEventListener('message', function(e) {
+            var overlay = document.getElementById('debug-overlay');
+            overlay.style.display = 'block';
+            overlay.innerHTML += "<div>> " + e.data + "</div>";
+        });
+        window.onerror = function(msg, url, line) {
+            var overlay = document.getElementById('debug-overlay');
+            overlay.style.display = 'block';
+            overlay.innerHTML += "<div style='color:red;'>CRITICAL: " + msg + " at line " + line + "</div>";
+        };
+    </script>
+</body>
 </html>

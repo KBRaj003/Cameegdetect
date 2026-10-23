@@ -36,6 +36,8 @@ jobs:
               content = f.read()
           permissions = '<uses-permission android:name=\"android.permission.CAMERA\" />\n    <uses-feature android:name=\"android.hardware.camera\" android:required=\"true\" />\n    <application'
           content = content.replace('<application', permissions, 1)
+          # Also allow cleartext and mixed content for WebGL/Camera
+          content = content.replace('<application', '<application android:usesCleartextTraffic=\"true\" android:hardwareAccelerated=\"true\"', 1)
           with open(manifest_path, 'w') as f:
               f.write(content)
           "
