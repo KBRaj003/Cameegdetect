@@ -27,12 +27,19 @@ jobs:
       - name: Sync Web Assets
         run: npx cap sync android
 
-      - name: Patch AndroidManifest for Camera
+      - name: Patch AndroidManifest for Camera (Python)
         run: |
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-          sed -i '/<manifest/i \    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera" android:required="true" />' $MANIFEST
-          cat $MANIFEST
+          python3 -c "
+          import re
+          manifest_path = 'android/app/src/main/AndroidManifest.xml'
+          with open(manifest_path, 'r') as f:
+              content = f.read()
+          permissions = '<uses-permission android:name=\"android.permission.CAMERA\" />\n    <uses-feature android:name=\"android.hardware.camera\" android:required=\"true\" />\n    <application'
+          content = content.replace('<application', permissions, 1)
+          with open(manifest_path, 'w') as f:
+              f.write(content)
+          "
+          cat android/app/src/main/AndroidManifest.xml
 
       - name: Setup Java JDK
         uses: actions/setup-java@v4
